@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/aop
+       http://www.springframework.org/schema/aop/spring-aop.xsd
+       http://www.springframework.org/schema/cache
+       http://www.springframework.org/schema/cache/spring-cache.xsd
+       http://www.springframework.org/schema/tx
+       http://www.springframework.org/schema/tx/spring-tx.xsd" >
+
+    <!-- 自动扫描 -->
+    <context:component-scan base-package="xyz.zzqstudy" >
+        <!--<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>-->
+    </context:component-scan>
+
+    <!-- 引入配置文件 -->
+    <!--<bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertiesFactoryBean">-->
+        <!--<property name="location" value="classpath:jdbc.properties"/>-->
+    <!--</bean>-->
+
+     <!--配置JDBC -->
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver" />
+        <property name="url" value="jdbc:mysql://{ip}:3306/stock_db" />
+        <property name="username" value="{user}" />
+        <property name="password" value="{password}" />
+    </bean>
+
+    <!-- spring与MyBatis整合 -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="configLocation" value="classpath:mybatis-config.xml"/>
+        <property name="typeAliasesPackage" value="xyz.zzqstudy.entity" />
+    </bean>
+
+    <bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+        <constructor-arg name="sqlSessionFactory" ref="sqlSessionFactory" />
+        <constructor-arg name="executorType" value="BATCH" />
+    </bean>
+
+    <!-- 配置扫描容器，将mybatis接口实现加入到ioc容器中 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!--扫描所有的dao接口的实现 加入到ioc容器-->
+        <property name="basePackage" value="xyz.zzqstudy.dao"/>
+        <property name="sqlSessionTemplateBeanName" value="sqlSessionTemplate"/>
+    </bean>
+
+
+
+    <!-- 配置：使得controller的返回为json -->
+    <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping" />
+    <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
+         <property name="messageConverters">
+             <list>
+                 <bean class="org.springframework.http.converter.StringHttpMessageConverter">
+                     <property name="supportedMediaTypes">
+                         <list>
+                             <value>text/html; charset=UTF-8</value>
+                             <value>application/json;charset=UTF-8</value>
+                         </list>
+                     </property>
+                 </bean>
+                 <bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+                     <property name="supportedMediaTypes">
+                         <list>
+                             <value>text/html; charset=UTF-8</value>
+                             <value>application/json;charset=UTF-8</value>
+                         </list>
+                     </property>
+                 </bean>
+             </list>
+         </property>
+     </bean>
+
+
+    <!-- 事务管理 -->
+    <bean id="transactionManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+
+    <aop:aspectj-autoproxy />
+
+</beans>
